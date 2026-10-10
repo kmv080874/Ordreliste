@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1f2b36">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Ordreliste</title>
+<style>
+:root{--steel:#1f2b36;--steel2:#34495a;--acc:#2f86d6;--line:#8d99a4;--g:#bfe8bf;--r:#f6b9b9;--o:#ffd08a;--bg:#e6eaee}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:14px}body.sz-s{font-size:12.5px}body.sz-l{font-size:16.5px}
+body{margin:0;background:var(--bg);font:1rem/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1c2329;overflow-x:hidden}
+.top{background:linear-gradient(120deg,var(--steel),var(--steel2),var(--steel));background-size:200% 100%;animation:shim 9s ease-in-out infinite;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.top .ttl{flex:1}.top h1{margin:0;font-size:1.45rem;letter-spacing:.3px}.sub{font-size:.85rem;opacity:.85}
+.ic{flex:none;width:40px;height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:1.3rem;transition:transform .25s,background .2s}
+.ic:active{transform:rotate(60deg) scale(.92);background:rgba(255,255,255,.28)}
+.pills{display:flex;gap:6px;flex-wrap:wrap;padding:10px 10px 4px}
+.pill{padding:6px 11px;border-radius:20px;font-weight:700;font-size:.9rem;border:1px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pill.pop{animation:pop .4s}
+.pg{background:var(--g)}.pr{background:var(--r)}.po{background:var(--o)}.pi{background:#fff}
+.acts{display:flex;gap:7px;overflow-x:auto;padding:6px 10px 8px;scrollbar-width:none}
+.acts::-webkit-scrollbar{display:none}
+button.b,label.b{flex:none;font:inherit;font-weight:600;border:1px solid #c3cad0;background:#fff;color:var(--steel);border-radius:11px;padding:9px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:transform .15s,box-shadow .15s,background .2s;cursor:pointer}
+.b:active{transform:scale(.94)}.b.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.b.pri{background:var(--steel);color:#fff;border-color:var(--steel)}
+#prog{margin:0 10px;display:none}
+#prog.show{display:block}#prog .t{font-size:.85rem;color:#44515c;margin-bottom:4px}
+#prog .bar{height:7px;background:#cfd6dc;border-radius:5px;overflow:hidden}
+#prog .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),#6cc1ff,var(--acc));background-size:200% 100%;animation:shim 1.2s linear infinite;transition:width .3s}
+.sec{margin:8px 8px 18px}
+.sec h2{margin:0 0 5px;font-size:1.2rem;color:var(--steel);display:flex;align-items:center;gap:8px}
+.sec h2::before{content:"";width:5px;height:1.1em;border-radius:3px;background:var(--acc)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1);-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;min-width:1150px;width:100%}
+th,td{border:1px solid var(--line);padding:6px 7px;white-space:nowrap;background:inherit}
+th{background:var(--steel);color:#fff;font-size:.85rem;text-align:left;position:sticky;top:0}
+tr{background:#fff;transition:background .35s}
+tr.g{background:var(--g)}tr.r{background:var(--r)}tr.o{background:var(--o)}
+.fresh tr.row{animation:rin .45s both;animation-delay:calc(var(--i)*22ms)}
+td.n{text-align:right}
+.s1{position:sticky;left:0;z-index:2;width:46px;text-align:center}
+.s2{position:sticky;left:46px;z-index:2;font-weight:700;box-shadow:2px 0 0 var(--line)}
+th.s1,th.s2{z-index:3;background:var(--steel)}
+input[type=checkbox].ig{width:26px;height:26px;accent-color:var(--acc);transition:transform .2s}
+input[type=checkbox].ig:checked{transform:scale(1.15)}
+tr.ig td.s2::after{content:" ▶";color:var(--acc);display:inline-block;animation:pls 1.4s ease-in-out infinite}
+.cl{display:flex;gap:5px}
+.cl button{width:34px;height:34px;padding:0;border-radius:9px;border:2px solid transparent;font-size:1rem;font-weight:700;transition:transform .15s,border-color .15s}
+.cl button:active{transform:scale(.85)}
+.cl .bg{background:var(--g)}.cl .bo{background:var(--o)}.cl .br{background:var(--r)}.cl .on{border-color:#000;transform:scale(1.08)}
+td input[type=text]{width:100%;min-width:200px;font:inherit;padding:6px;border:1px solid rgba(0,0,0,.2);border-radius:7px;background:rgba(255,255,255,.85)}
+.note input{width:100%;margin-top:5px;font:inherit;padding:7px;border:1px dashed var(--line);border-radius:8px;background:#fff}
+.edit [contenteditable]{outline:1px dashed var(--acc);background:#fffbe8;min-width:30px}
+.hide-k .c-k,.hide-op .c-op,.hide-st .c-st,.hide-t .c-t{display:none}
+.hint{font-size:.8rem;color:#55616c;padding:0 12px 24px}
+.empty{margin:30px 14px;text-align:center;color:#55616c;padding:30px;border:2px dashed #b4bec6;border-radius:14px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);background:#1f2b36;color:#fff;padding:11px 18px;border-radius:24px;opacity:0;pointer-events:none;transition:.35s;z-index:50;max-width:90%;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.page{animation:sl .3s both}
+.card{background:#fff;border-radius:14px;margin:12px;padding:6px 14px 10px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.card h3{margin:10px 0 4px;font-size:1.05rem;color:var(--steel)}
+.rw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #e2e7eb}
+.rw:first-of-type{border-top:0}
+.rw small{display:block;color:#66737e;font-size:.8rem}
+.rw input[type=text],.rw input[type=email],.rw select{font:inherit;padding:8px;border:1px solid #b9c3cb;border-radius:8px;max-width:55%;background:#fff}
+.sw{position:relative;width:50px;height:28px;flex:none}.sw input{display:none}
+.sw span{position:absolute;inset:0;background:#b7c0c8;border-radius:20px;transition:.25s}
+.sw span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw input:checked+span{background:var(--acc)}.sw input:checked+span::after{transform:translateX(22px)}
+.dng{color:#b42323!important;border-color:#e3b1b1!important}
+.printhead{display:none}
+body.noanim *{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+@keyframes shim{0%{background-position:0 0}50%{background-position:100% 0}100%{background-position:0 0}}
+@keyframes rin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{50%{transform:scale(1.18)}}
+@keyframes pls{50%{transform:translateX(3px);opacity:.6}}
+@keyframes sl{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media print{
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body{background:#fff;font-size:9pt}
+ .top,.pills,.seg,.acts,#prog,.hint,#pgSet,#toast,#sheetBg,.c-f,.ed,.addrow{display:none!important}
+ .printhead{display:block;font-size:13pt;font-weight:700;margin:0 0 6px}
+ .sec{margin:0 0 10px;break-inside:avoid}.scroll{overflow:visible;border:0;box-shadow:none;border-radius:0}
+ table{min-width:0}th,td{padding:2px 4px;white-space:normal;position:static!important;box-shadow:none!important}
+ tr{break-inside:avoid}.fresh tr.row{animation:none}
+ td input[type=text]{border:0;padding:0;min-width:0;background:transparent}input::placeholder{color:transparent}
+ .note input{border:0;padding:0}.note input:placeholder-shown{display:none}
+ input[type=checkbox].ig{width:14px;height:14px}tr.ig td.s2::after{animation:none}
+}
+.lg{background:#fff;border-radius:9px;padding:4px 8px;display:flex;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg img{height:30px;display:block}
+.seg{display:flex;margin:6px 10px 2px;background:#cfd6dc;border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;font:inherit;font-weight:700;border:0;padding:9px;border-radius:10px;background:transparent;color:var(--steel);transition:background .25s,color .25s,box-shadow .25s}
+.seg button.on{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.rel{font-weight:700}.cnt{font-size:.8rem;background:var(--steel);color:#fff;border-radius:12px;padding:1px 9px}
+body.dark{--bg:#10161c;--g:#2d6a3a;--r:#7a2f2f;--o:#8a5d12;--line:#49565f;color:#e6ecf0}
+body.dark .scroll,body.dark .card{background:#18212a}
+body.dark tr{background:#18212a}body.dark tr.g{background:var(--g)}body.dark tr.r{background:var(--r)}body.dark tr.o{background:var(--o)}
+body.dark .sec h2,body.dark .card h3{color:#cfe3f3}
+body.dark .seg{background:#232f39}body.dark .seg button{color:#cfe3f3}body.dark .seg button.on{background:#34495a;color:#fff}
+body.dark button.b,body.dark label.b{background:#202b35;color:#e6ecf0;border-color:#3a4854}
+body.dark .b.pri,body.dark .b.on{background:#2f86d6;border-color:#2f86d6;color:#fff}
+body.dark .pill.pi{background:#202b35;color:#e6ecf0}
+body.dark td input[type=text],body.dark .note input,body.dark .rw input,body.dark .rw select{background:#0f161c;color:#e6ecf0;border-color:#46535d}
+body.dark .cl .on{border-color:#fff}
+body.dark .rw{border-color:#2b3741}body.dark .rw small,body.dark .hint,body.dark .empty,body.dark #prog .t{color:#9fb0bc}
+body.dark .edit [contenteditable]{background:#2c2a14}
+body.dark #toast{background:#e6ecf0;color:#10161c}
+body.dark .dng{color:#ff8a8a!important;border-color:#6a3a3a!important}
+#sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fd .2s}
+#sheetBg[hidden]{display:none}
+#sheet{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:14px 14px 22px;max-height:85vh;overflow:auto;animation:up .28s both;box-shadow:0 -6px 24px rgba(0,0,0,.3)}
+#sheet h3{margin:0 0 10px;font-size:1.1rem}
+#shList{display:flex;flex-direction:column;gap:7px}
+#shList button{text-align:left;font:inherit;font-weight:600;padding:13px;border-radius:12px;border:2px solid #f0b050;background:#fff3dd;color:#3a2a08;transition:transform .15s}
+#shList button:active{transform:scale(.97)}#shList button.on{background:var(--o);border-color:#b87400}
+.shRow{display:flex;gap:8px;margin-top:10px}.shRow input{flex:1;min-width:0;font:inherit;padding:10px;border:1px solid #b9c3cb;border-radius:10px}
+.why{font-size:.8rem;font-weight:700;color:#7a4b00;margin-bottom:3px;white-space:normal}
+body.dark #sheet{background:#18212a;color:#e6ecf0}body.dark #shList button{background:#3a2c10;color:#ffe2b0;border-color:#8a5d12}body.dark #shList button.on{background:var(--o)}body.dark .why{color:#ffd08a}body.dark .shRow input{background:#0f161c;color:#e6ecf0;border-color:#46535d}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}@keyframes fd{from{opacity:0}}
+</style>
+<style id="pg"></style>
+</head>
+<body>
+<header class="top"><span class="lg"><img id="logo" alt="NTF"></span><div class="ttl"><h1>Ordreliste</h1><div class="sub" id="sub"></div></div><button class="ic" id="full" aria-label="Fuld skærm">⛶</button><button class="ic" id="theme" aria-label="Mørk eller lys">🌙</button><button class="ic" id="gear" aria-label="Indstillinger">⚙</button></header>
+
+<main id="pgMain">
+ <div class="pills"><span class="pill pi" id="cI"></span><span class="pill pg" id="cG"></span><span class="pill po" id="cO"></span><span class="pill pr" id="cR"></span></div>
+ <div class="seg"><button id="vAll" class="on">Alle ordrer</button><button id="vDay">📅 I dag</button></div>
+ <div class="acts">
+  <label class="b pri" for="foto">📷 Ny liste (foto)</label>
+  <button class="b" id="bEdit">✏️ Redigér</button>
+  <button class="b pri" id="bPdf">📄 Gem PDF</button>
+  <button class="b" id="bShare">📤 Del PDF</button>
+  <button class="b" id="bMail">✉️ E-mail</button>
+  <button class="b" id="bSave">💾 Backup</button>
+  <label class="b" for="fil">📂 Åbn backup</label>
+  <button class="b" id="bPrint">🖨 Print</button>
+  <button class="b" id="bHide">Skjul færdige</button>
+ </div>
+ <div id="prog"><div class="t" id="progT"></div><div class="bar"><i id="progB"></i></div></div>
+ <div class="printhead" id="ph"></div>
+ <div id="app"></div>
+ <p class="hint">✓ grøn = færdig · ! orange = står stille (du vælger årsag) · ✕ rød = forsinket (rækker bliver også røde automatisk, når slut er overskredet). Flueben = igangsat. Alt gemmes på telefonen – brug “Backup” for at kunne åbne listen igen i appen. PDF er til at se, sende og printe.</p>
+</main>
+
+<main id="pgSet" hidden>
+ <div class="card"><h3>E-mail</h3>
+  <div class="rw"><div>Modtager</div><input type="email" data-s="mail" inputmode="email" placeholder="navn@firma.dk"></div>
+  <div class="rw"><div>Emne starter med</div><input type="text" data-s="pre"></div>
+  <div class="rw"><div>Kun markerede rækker i mailen<small>Slå fra for at tage hele listen med</small></div><label class="sw"><input type="checkbox" data-s="onlyMarked"><span></span></label></div></div>
+ <div class="card"><h3>Visning</h3>
+  <div class="rw"><div>Udseende</div><select data-s="theme"><option value="auto">Følg telefon</option><option value="light">Lyst</option><option value="dark">Mørkt</option></select></div>
+  <div class="rw"><div>Rød automatisk ved overskredet slut</div><label class="sw"><input type="checkbox" data-s="auto"><span></span></label></div>
+  <div class="rw"><div>Tekststørrelse</div><select data-s="size"><option value="s">Lille</option><option value="m">Normal</option><option value="l">Stor</option></select></div>
+  <div class="rw"><div>Animationer</div><label class="sw"><input type="checkbox" data-s="anim"><span></span></label></div>
+  <div class="rw"><div>Kolonne: Kunde</div><label class="sw"><input type="checkbox" data-s="k"><span></span></label></div>
+  <div class="rw"><div>Kolonne: Operation</div><label class="sw"><input type="checkbox" data-s="op"><span></span></label></div>
+  <div class="rw"><div>Kolonne: Status</div><label class="sw"><input type="checkbox" data-s="st"><span></span></label></div>
+  <div class="rw"><div>Kolonner: Plan / Udf. / Rest</div><label class="sw"><input type="checkbox" data-s="t"><span></span></label></div></div>
+ <div class="card"><h3>Årsager til stop (orange !)</h3>
+  <div id="rsList"></div>
+  <div class="acts"><button class="b" id="rsAdd">＋ Tilføj årsag</button><button class="b dng" id="rsDef">Gendan standard</button></div></div>
+ <div class="card"><h3>Udskrift</h3>
+  <div class="rw"><div>Papir</div><select data-s="paper"><option>A4</option><option>A3</option></select></div>
+  <div class="rw"><div>Retning</div><select data-s="orient"><option value="landscape">Liggende</option><option value="portrait">Stående</option></select></div></div>
+ <div class="card"><h3>App</h3>
+  <div class="rw"><div>Installér som app<small id="instSm">Ikon på startskærmen – virker uden internet</small></div><button class="b pri" id="bInst">📲 Installér</button></div></div>
+ <div class="card"><h3>Data</h3>
+  <div class="rw"><div>Fjern alle markeringer og kommentarer</div><button class="b dng" id="bClr">Ryd</button></div>
+  <div class="rw"><div>Tøm listen (start forfra)</div><button class="b dng" id="bDef">Tøm</button></div></div>
+ <div class="acts"><button class="b pri" id="bBack">← Tilbage til listen</button></div>
+</main>
+
+<input type="file" id="foto" accept="image/*" capture="environment" hidden>
+<input type="file" id="fil" accept=".json,application/json" hidden>
+<div id="sheetBg" hidden><div id="sheet"><h3 id="shT"></h3><div id="shList"></div>
+ <div class="shRow"><input type="text" id="shOwn" placeholder="Skriv anden årsag…"><button class="b pri" id="shUse">Brug</button></div>
+ <div class="shRow"><button class="b dng" id="shClr">Fjern markering</button><button class="b" id="shX">Annullér</button></div></div></div>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const LOGO='data:image/jpeg;base64,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';const LOGO_R=2.416;
+const baseList=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return{dato:p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear(),sec:[]}};
+const DEFR=['Mangler materiale','Maskine står stille','Venter på kunde / afklaring','Mangler værktøj / program','Venter på kvalitetsgodkendelse','Mangler personale'];
+const DEF={reasons:DEFR.slice(),theme:'auto',mail:'',pre:'Ordreliste',onlyMarked:1,auto:1,size:'m',anim:1,k:1,op:1,st:1,t:1,paper:'A4',orient:'landscape'};
+let S={list:baseList(),marks:{},set:{...DEF},skjul:false,edit:false,view:'all'};
+try{
+ const g=localStorage.getItem('ordreliste-v2');
+ if(g){const o=JSON.parse(g);S=Object.assign(S,o,{set:{...DEF,...(o.set||{})},edit:false})}
+ else{const g1=localStorage.getItem('ordreliste-v1');if(g1){const o=JSON.parse(g1);
+  for(const k in (o.rows||{}))S.marks[k.replace(/(\d+-\d+) (\d+:\d+)$/,'$1-2026 $2')]=o.rows[k];
+  S.skjul=!!o.skjul;if(o.notes)for(const i in o.notes)if(S.list.sec[i])S.list.sec[i].n=o.notes[i]}}
+}catch(e){}
+const save=()=>{try{localStorage.setItem('ordreliste-v2',JSON.stringify({list:S.list,marks:S.marks,set:S.set,skjul:S.skjul,view:S.view}))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const dt=s=>{const m=String(s).match(/(\d+)-(\d+)-(\d+)\s+(\d+):(\d+)/);return m?new Date(+m[3],m[2]-1,+m[1],+m[4],+m[5]):null};
+const key=r=>r.o+'|'+r.op+'|'+r.s;
+function wk(d){const m=String(d).match(/(\d+)-(\d+)-(\d+)/);if(!m)return'';const x=new Date(Date.UTC(+m[3],m[2]-1,+m[1])),w=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-w);return Math.ceil(((x-Date.UTC(x.getUTCFullYear(),0,1))/864e5+1)/7)}
+const title=()=>'Ordreliste – uge '+wk(S.list.dato)+' ('+S.list.dato+')';
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2800)}
+
+function cls(r){const f=(S.marks[key(r)]||{}).f;if(f)return f;const e=dt(r.e);return S.set.auto&&e&&e<new Date()?'r':''}
+function recount(){
+ let i=0,g=0,o=0,r=0;S.list.sec.forEach(s=>s.r.forEach(x=>{const m=S.marks[key(x)]||{},c=cls(x);if(m.i)i++;if(c==='g')g++;else if(c==='o')o++;else if(c==='r')r++}));
+ [['cI','Igangsat '+i],['cG','Færdig '+g],['cO','Står stille '+o],['cR','Forsinket '+r]].forEach(([id,t])=>{const e=$(id);if(e.textContent!==t){e.textContent=t;e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop')}});
+}
+function syncView(){const d=S.view==='day';$('vAll').classList.toggle('on',!d);$('vDay').classList.toggle('on',d);$('bEdit').disabled=d;$('bEdit').style.opacity=d?.45:1}
+function rel(r,c){if(c==='g')return'Færdig';const e=dt(r.e);if(!e)return'';const m=Math.round((e-new Date())/6e4),a=Math.abs(m);
+ const f=a<60?a+' min':a<1440?Math.floor(a/60)+' t '+(a%60)+' min':Math.floor(a/1440)+' d '+Math.floor(a%1440/60)+' t';return m>=0?'om '+f:'overskredet '+f}
+function dayRows(){
+ const n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),b=new Date(+a+864e5),day=[],late=[];
+ S.list.sec.forEach(s=>s.r.forEach(r=>{const st=dt(r.s),e=dt(r.e);if(!st||!e)return;const c=cls(r);if(S.skjul&&c==='g')return;
+  if(st<b&&e>=a)day.push(r);else if(e<a&&c!=='g')late.push(r)}));
+ const by=(x,y)=>dt(x.e)-dt(y.e);return{day:day.sort(by),late:late.sort(by)}}
+function renderToday(){
+ const A=$('app'),n=new Date(),{day,late}=dayRows(),dl=n.toLocaleDateString('da-DK',{weekday:'long',day:'numeric',month:'long'});
+ $('sub').textContent='I dag · '+dl+' · uge '+wk(String(n.getDate())+'-'+(n.getMonth()+1)+'-'+n.getFullYear());$('ph').textContent='Dagsoverblik – '+dl;
+ $('bHide').textContent=S.skjul?'Vis færdige':'Skjul færdige';$('bHide').classList.toggle('on',S.skjul);
+ A.className='fresh '+['k','op','st','t'].filter(k=>!S.set[k]).map(k=>'hide-'+k).join(' ');
+ let i=0;
+ const row=r=>{const k=key(r),m=S.marks[k]||{},c=cls(r);
+  return`<tr class="row ${c} ${m.i?'ig':''}" style="--i:${i++}" data-k="${esc(k)}"><td class="s1"><input class="ig" type="checkbox" data-a="i" ${m.i?'checked':''}></td><td class="s2">${esc(r.o)}</td><td class="c-k">${esc(r.k)}</td><td class="n">${esc(r.a)}</td><td class="c-op">${esc(r.op)}</td><td>${esc(r.e)}</td><td class="rel">${rel(r,c)}</td><td class="c-st">${esc(r.st)}</td><td class="n c-t">${esc(r.r)}</td>
+  <td class="c-f"><div class="cl"><button class="bg ${m.f==='g'?'on':''}" data-f="g">✓</button><button class="bo ${m.f==='o'?'on':''}" data-f="o">!</button><button class="br ${m.f==='r'?'on':''}" data-f="r">✕</button></div></td><td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td></tr>`};
+ const tb=(rows,t)=>rows.length?`<div class="sec"><h2>${t} <span class="cnt">${rows.length}</span></h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Slut</th><th>Tid til slut</th><th class="c-st">Status</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div></div>`:'';
+ A.innerHTML=(day.length||late.length)?tb(late,'Forsinket fra tidligere dage')+tb(day,'I dag – efter sluttid'):'<div class="empty">Ingen ordrer i dag 🎉<br>Skift til “Alle ordrer” for hele listen.</div>';
+ recount();
+}
+function render(fresh){
+ syncView();if(S.view==='day'){renderToday();return}
+ const L=S.list,A=$('app');
+ $('sub').textContent='Liste fra '+L.dato+' · uge '+wk(L.dato);$('ph').textContent=title();
+ $('bHide').textContent=S.skjul?'Vis færdige':'Skjul færdige';$('bHide').classList.toggle('on',S.skjul);
+ $('bEdit').textContent=S.edit?'✔ Færdig med redigering':'✏️ Redigér';$('bEdit').classList.toggle('on',S.edit);
+ A.className=(fresh?'fresh ':'')+(S.edit?'edit ':'')+['k','op','st','t'].filter(k=>!S.set[k]).map(k=>'hide-'+k).join(' ');
+ if(!L.sec.length){A.innerHTML='<div class="empty">Ingen liste endnu.<br>Tryk “📷 Ny liste (foto)” eller “📂 Åbn fil”.</div>';recount();return}
+ let n=0,h='';
+ const ce=(si,ri,f,c,v)=>`<td class="${c}" ${S.edit?`contenteditable data-e="${si}.${ri}.${f}"`:''}>${esc(v)}</td>`;
+ L.sec.forEach((s,si)=>{
+  h+=`<div class="sec"><h2 ${S.edit?`contenteditable data-e="${si}.t"`:''}>${esc(s.t)}</h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Start</th><th>Slut</th><th class="c-st">Status</th><th class="c-t">Plan (t)</th><th class="c-t">Udf. (t)</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th>${S.edit?'<th class="ed"></th>':''}</tr></thead><tbody>`;
+  s.r.forEach((r,ri)=>{
+   const k=key(r),m=S.marks[k]||{},c=cls(r);if(S.skjul&&c==='g')return;
+   h+=`<tr class="row ${c} ${m.i?'ig':''}" style="--i:${n++}" data-k="${esc(k)}"><td class="s1"><input class="ig" type="checkbox" data-a="i" ${m.i?'checked':''}></td>
+   ${ce(si,ri,'o','s2',r.o)}${ce(si,ri,'k','c-k',r.k)}${ce(si,ri,'a','n',r.a)}${ce(si,ri,'op','c-op',r.op)}${ce(si,ri,'s','',r.s)}${ce(si,ri,'e','',r.e)}${ce(si,ri,'st','c-st',r.st)}${ce(si,ri,'p','n c-t',r.p)}${ce(si,ri,'u','n c-t',r.u)}${ce(si,ri,'r','n c-t',r.r)}
+   <td class="c-f"><div class="cl"><button class="bg ${m.f==='g'?'on':''}" data-f="g">✓</button><button class="bo ${m.f==='o'?'on':''}" data-f="o">!</button><button class="br ${m.f==='r'?'on':''}" data-f="r">✕</button></div></td>
+   <td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td>${S.edit?`<td class="ed"><button class="b dng" data-del="${si}.${ri}">✕</button></td>`:''}</tr>`;
+  });
+  h+=`</tbody></table></div>${S.edit?`<div class="acts addrow"><button class="b" data-add="${si}">＋ Række</button></div>`:''}<div class="note"><input type="text" placeholder="Note" value="${esc(s.n)}" data-n="${si}"></div></div>`;
+ });
+ A.innerHTML=h;recount();
+}
+// klik/ændringer
+$('app').addEventListener('click',e=>{
+ const b=e.target.closest('[data-f]');
+ if(b&&b.dataset.f==='o'){openSheet(b.closest('tr').dataset.k);return}
+ if(b){const tr=b.closest('tr'),k=tr.dataset.k,m=S.marks[k]=S.marks[k]||{};m.f=m.f===b.dataset.f?'':b.dataset.f;save();
+  tr.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x.dataset.f===m.f));
+  const r=findRow(k);tr.classList.remove('g','r','o');if(cls(r))tr.classList.add(cls(r));recount();if(S.skjul&&m.f==='g')setTimeout(()=>render(false),350);return}
+ const d=e.target.closest('[data-del]');if(d){const[si,ri]=d.dataset.del.split('.');S.list.sec[si].r.splice(ri,1);save();render(false)}
+ const a=e.target.closest('[data-add]');if(a){S.list.sec[a.dataset.add].r.push({o:'',k:'',a:'',op:'',s:'',e:'',st:'Planlagt',p:'0,0',u:'0,0',r:'0,0'});save();render(false)}
+});
+function findRow(k){for(const s of S.list.sec)for(const r of s.r)if(key(r)===k)return r}
+$('app').addEventListener('change',e=>{
+ const t=e.target;
+ if(t.dataset.n!==undefined){S.list.sec[t.dataset.n].n=t.value;save();return}
+ const tr=t.closest('tr');if(!tr)return;const k=tr.dataset.k,m=S.marks[k]=S.marks[k]||{};
+ if(t.dataset.a==='i'){m.i=t.checked;tr.classList.toggle('ig',t.checked);recount()}
+ if(t.dataset.a==='c')m.c=t.value;
+ save();
+});
+$('app').addEventListener('focusout',e=>{
+ const t=e.target;if(!S.edit||!t.dataset.e)return;
+ const p=t.dataset.e.split('.'),v=t.textContent.trim();
+ if(p[1]==='t')S.list.sec[p[0]].t=v;else S.list.sec[p[0]].r[p[1]][p[2]]=v;save();
+});
+// værktøjer
+$('bHide').onclick=()=>{S.skjul=!S.skjul;save();render(false)};
+$('bEdit').onclick=()=>{S.edit=!S.edit;render(false);if(!S.edit)toast('Ændringer gemt')};
+$('bPrint').onclick=()=>{if(S.edit){S.edit=false;render(false)}const t=document.title;document.title=title();setTimeout(()=>{print();document.title=t},60)};
+function exp(){return{app:'ordreliste',v:2,gemt:new Date().toISOString(),list:S.list,marks:S.marks}}
+const fname=()=>'ordreliste-uge'+wk(S.list.dato)+'-'+S.list.dato.slice(-4)+'.json';
+function download(f){const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+const mkFile=()=>new File([JSON.stringify(exp())],fname(),{type:'application/json'});
+$('bSave').onclick=()=>{download(mkFile());toast('Gemmer '+fname())};
+// PDF – samme opstilling som den trykte liste
+const pdfName=()=>'ordreliste-uge'+wk(S.list.dato)+'-'+S.list.dato.slice(-4)+'.pdf';
+function buildPDF(){
+ const doc=new window.jspdf.jsPDF({orientation:S.set.orient,unit:'mm',format:S.set.paper.toLowerCase()});
+ const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),mg=10;
+ const COL={g:[191,232,191],o:[255,208,138],r:[246,185,185]},TAG={g:'Færdig',o:'Står stille',r:'Forsinket'};
+ let ci=0,cg=0,co=0,cr=0;
+ S.list.sec.forEach(s=>s.r.forEach(x=>{const m=S.marks[key(x)]||{},c=cls(x);if(m.i)ci++;if(c==='g')cg++;else if(c==='o')co++;else if(c==='r')cr++}));
+ doc.setFillColor(31,43,54);doc.rect(0,0,W,22,'F');doc.setFillColor(47,134,214);doc.rect(0,22,W,1.2,'F');
+ doc.setFillColor(255,255,255);doc.roundedRect(mg,3.5,30,15,2,2,'F');try{doc.addImage(LOGO,'JPEG',mg+3,3.5+(15-24/LOGO_R)/2,24,24/LOGO_R)}catch(e){}const tx=mg+36;doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('Ordreliste',tx,10);
+ doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text('Uge '+wk(S.list.dato)+'  ·  Liste fra '+S.list.dato,tx,17);
+ doc.text('Igangsat '+ci+'   ·   Færdig '+cg+'   ·   Står stille '+co+'   ·   Forsinket '+cr,W-mg,10,{align:'right'});
+ let lx=W-mg-100;[['g','Færdig'],['o','Står stille'],['r','Forsinket']].forEach(([k,t],i)=>{const x=lx+i*34;doc.setFillColor(...COL[k]);doc.rect(x,13.5,4,4,'F');doc.text(t,x+5.5,17)});
+ let y=30;
+ S.list.sec.forEach(sec=>{
+  if(!sec.r.length)return;
+  if(y>H-38){doc.addPage();y=mg+2}
+  doc.setTextColor(31,43,54);doc.setFont('helvetica','bold');doc.setFontSize(12.5);doc.text(sec.t,mg,y);
+  const cl=[];
+  const body=sec.r.map(r=>{const m=S.marks[key(r)]||{},c=cls(r);cl.push(c);
+   return[r.o,r.k,r.a,r.op,r.s,r.e,r.st,r.p,r.u,r.r,m.i?'X':'',[c==='o'?'Står stille'+(m.why?': '+m.why:''):c?TAG[c]:'',m.c||''].filter(Boolean).join(' – ')]});
+  doc.autoTable({startY:y+2,margin:{left:mg,right:mg,top:mg,bottom:14},theme:'grid',
+   head:[['Ordre','Kunde','Antal','Operation','Start','Slut','Status','Plan (t)','Udf. (t)','Rest (t)','Igang','Tekst']],body,
+   styles:{fontSize:8,cellPadding:1.4,lineColor:[120,130,140],lineWidth:.2,textColor:[20,25,30],overflow:'linebreak',valign:'middle'},
+   headStyles:{fillColor:[31,43,54],textColor:255,fontStyle:'bold'},
+   columnStyles:{0:{fontStyle:'bold'},7:{halign:'right'},8:{halign:'right'},9:{halign:'right'},10:{halign:'center',fontStyle:'bold',cellWidth:13}},
+   didParseCell:d=>{if(d.section==='body'&&cl[d.row.index])d.cell.styles.fillColor=COL[cl[d.row.index]]}});
+  y=doc.lastAutoTable.finalY+4;
+  if(sec.n){doc.setFont('helvetica','italic');doc.setFontSize(9.5);doc.setTextColor(60,70,80);doc.text('Note: '+sec.n,mg,y+1);y+=5}
+  y+=7;
+ });
+ const N=doc.getNumberOfPages(),d=new Date(),p=n=>String(n).padStart(2,'0');
+ for(let i=1;i<=N;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(110,120,130);
+  doc.text('Ordreliste uge '+wk(S.list.dato)+' · udskrevet '+p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes()),mg,H-6);
+  doc.text('Side '+i+' af '+N,W-mg,H-6,{align:'right'})}
+ return doc;
+}
+function mkPdf(){if(!(window.jspdf&&window.jspdf.jsPDF)){toast('PDF kræver internet første gang – prøv igen online');return null}
+ if(S.edit){S.edit=false;render(false)}
+ try{return new File([buildPDF().output('blob')],pdfName(),{type:'application/pdf'})}catch(e){toast('PDF kunne ikke laves');return null}}
+$('bPdf').onclick=()=>{const f=mkPdf();if(f){download(f);toast('Gemmer '+f.name)}};
+$('bShare').onclick=async()=>{const f=mkPdf();if(!f)return;try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:title(),text:title()})}else{download(f);toast('Deling understøttes ikke – PDF er hentet')}}catch(e){}};
+$('fil').addEventListener('change',e=>{
+ const f=e.target.files[0];e.target.value='';if(!f)return;
+ const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o.list||!Array.isArray(o.list.sec))throw 0;
+  if(!confirm('Indlæs “'+f.name+'” og erstat den nuværende liste?'))return;
+  S.list=o.list;S.marks=o.marks||{};save();render(true);toast('Liste indlæst')}catch(x){toast('Filen kunne ikke læses som ordreliste')}};rd.readAsText(f)});
+$('bMail').onclick=()=>{
+ const L=[],only=S.set.onlyMarked;
+ S.list.sec.forEach(s=>{const rows=[];s.r.forEach(r=>{const m=S.marks[key(r)]||{},c=cls(r);
+  if(only&&!m.i&&!c&&!m.c)return;
+  const st=[m.i?'igangsat':'',c==='g'?'FÆRDIG':c==='o'?'STÅR STILLE'+(m.why?': '+m.why:''):c==='r'?'FORSINKET':''].filter(Boolean).join(', ');
+  rows.push(`${r.o} ${r.k} (${r.a} stk, ${r.op}, slut ${r.e})${st?' – '+st:''}${m.c?' – '+m.c:''}`)});
+  if(rows.length)L.push('',s.t.toUpperCase(),...rows)});
+ const body=title()+'\n'+['cI','cG','cO','cR'].map(i=>$(i).textContent).join(' · ')+'\n'+L.join('\n')+'\n\nTip: send selve listen som PDF via “Del PDF”.';
+ location.href='mailto:'+encodeURIComponent(S.set.mail)+'?subject='+encodeURIComponent(S.set.pre+' uge '+wk(S.list.dato)+' ('+S.list.dato+')')+'&body='+encodeURIComponent(body);
+};
+// foto → OCR
+function parse(text){
+ const lines=text.split('\n').map(l=>l.replace(/[|\[\]]/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+ const secs=[];let cur=null,dato=null;
+ const re=/(\d{6})\s+(.*?)(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2})\s+(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2})\s+([A-Za-zæøå]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/;
+ lines.forEach(l=>{
+  const m=l.match(re);
+  if(m){const mid=m[2].trim().split(' ').filter(Boolean),op=mid.pop()||'';let a='';if(mid.length&&/^\d+$/.test(mid[mid.length-1]))a=mid.pop();
+   if(!cur){cur={t:'Ordrer',n:'',r:[]};secs.push(cur)}
+   const f=x=>x.replace('.',',');
+   cur.r.push({o:m[1],k:mid.join(' '),a,op,s:m[3]+' '+m[4],e:m[5]+' '+m[6],st:m[7],p:f(m[8]),u:f(m[9]),r:f(m[10])});return}
+  if(/^\d{1,2}-\d{1,2}-\d{4}$/.test(l)&&!dato){dato=l;return}
+  if(/(samle|samlet|gruppehoved|buk|pkt|netman)/i.test(l)&&/^[A-Za-zÆØÅæøå0-9 ]{4,45}$/.test(l)&&!/^ordre/i.test(l)){cur={t:l,n:'',r:[]};secs.push(cur)}
+ });
+ return{dato,sec:secs.filter(s=>s.r.length)};
+}
+function prog(t,p){$('prog').classList.add('show');$('progT').textContent=t;$('progB').style.width=(p||5)+'%'}
+$('foto').addEventListener('change',e=>{
+ const f=e.target.files[0];e.target.value='';if(!f)return;
+ if(typeof Tesseract==='undefined'){toast('Billedlæsning kræver internet – prøv igen online');return}
+ const im=new Image();im.onload=async()=>{
+  try{
+   prog('Forbereder billede…',5);
+   const k=Math.min(1.6,2800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
+   const x=c.getContext('2d');x.filter='grayscale(1) contrast(1.35)';x.drawImage(im,0,0,c.width,c.height);
+   const w=await Tesseract.createWorker('dan',1,{logger:m=>{if(m.status)prog(m.status==='recognizing text'?'Læser tekst… '+Math.round(m.progress*100)+'%':'Henter sprogdata…',m.status==='recognizing text'?10+m.progress*88:8)}});
+   await w.setParameters({tessedit_pageseg_mode:'6'});
+   const r=await w.recognize(c);await w.terminate();
+   const p=parse(r.data.text),n=p.sec.reduce((a,s)=>a+s.r.length,0);
+   $('prog').classList.remove('show');
+   if(!n){toast('Fandt ingen ordrelinjer – tag billedet lige ovenfra i godt lys');return}
+   if(!confirm(n+' linjer i '+p.sec.length+' sektioner fundet. Erstat den nuværende liste?\n(Tjek bagefter i “Redigér”.)'))return;
+   const d=new Date();S.list={dato:p.dato||String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear(),sec:p.sec};
+   save();render(true);toast('Ny liste indlæst – tjek og ret i “Redigér”');
+  }catch(err){$('prog').classList.remove('show');toast('Fejl ved læsning af billedet')}
+ };im.src=URL.createObjectURL(f);
+});
+// indstillinger
+function applySet(){
+ const s=S.set,dark=s.theme==='dark'||(s.theme==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+ document.body.className=(s.size==='s'?'sz-s':s.size==='l'?'sz-l':'')+(s.anim?'':' noanim')+(dark?' dark':'');
+ $('theme').textContent=dark?'☀':'🌙';document.querySelector('meta[name=theme-color]').content=dark?'#0d1318':'#1f2b36';
+ $('pg').textContent='@page{size:'+s.paper+' '+s.orient+';margin:8mm}';
+ document.querySelectorAll('[data-s]').forEach(i=>{if(i.type==='checkbox')i.checked=!!s[i.dataset.s];else i.value=s[i.dataset.s]});
+}
+$('pgSet').addEventListener('change',e=>{const t=e.target,k=t.dataset.s;if(!k)return;S.set[k]=t.type==='checkbox'?(t.checked?1:0):t.value;save();applySet();render(false)});
+$('bClr').onclick=()=>{if(confirm('Fjerne alle markeringer og kommentarer?')){S.marks={};save();render(false);toast('Markeringer ryddet')}};
+$('bDef').onclick=()=>{if(confirm('Tøm hele listen? Tag evt. en backup først.')){S.list=baseList();save();render(true);toast('Listen er tom')}};
+function route(){const s=location.hash==='#indstillinger';$('pgSet').hidden=!s;$('pgMain').hidden=s;const p=s?$('pgSet'):$('pgMain');p.classList.remove('page');void p.offsetWidth;p.classList.add('page');scrollTo(0,0)}
+$('gear').onclick=()=>{location.hash=location.hash==='#indstillinger'?'':'#indstillinger'};
+$('bBack').onclick=()=>{location.hash=''};
+addEventListener('hashchange',route);
+$('logo').src=LOGO;
+$('full').onclick=()=>{const d=document,e=d.documentElement,fs=d.fullscreenElement||d.webkitFullscreenElement;
+ if(fs){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return}
+ const rq=e.requestFullscreen||e.webkitRequestFullscreen;
+ if(!rq){toast('Fuld skærm understøttes ikke her');return}
+ const pr=rq.call(e);if(pr&&pr.catch)pr.catch(()=>toast('Fuld skærm blev afvist'))};
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{$('full').textContent=(document.fullscreenElement||document.webkitFullscreenElement)?'🗗':'⛶'}));
+$('theme').onclick=()=>{S.set.theme=document.body.classList.contains('dark')?'light':'dark';save();applySet()};
+$('vAll').onclick=()=>{S.view='all';save();render(true)};
+$('vDay').onclick=()=>{S.view='day';S.edit=false;save();render(true)};
+addEventListener('beforeprint',()=>document.body.classList.remove('dark'));
+addEventListener('afterprint',applySet);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applySet)}catch(e){}
+setInterval(()=>{if(S.view==='day'&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||''))render(false)},60000);
+
+// årsags-vælger
+const why=m=>m.f==='o'&&m.why?`<div class="why">⚠ ${esc(m.why)}</div>`:'';
+let shKey=null,shR=[];
+function keepRender(){const sc=[...document.querySelectorAll('.scroll')].map(x=>x.scrollLeft),y=scrollY;render(false);document.querySelectorAll('.scroll').forEach((x,i)=>x.scrollLeft=sc[i]||0);scrollTo(0,y)}
+function openSheet(k){shKey=k;const r=findRow(k),m=S.marks[k]||{};shR=(S.set.reasons||[]).filter(Boolean);
+ $('shT').textContent='Hvorfor står ordre '+r.o+' stille?';
+ $('shList').innerHTML=shR.map((t,i)=>`<button data-i="${i}" class="${m.f==='o'&&m.why===t?'on':''}">${esc(t)}</button>`).join('')||'<small>Ingen faste årsager endnu – skriv en herunder, eller tilføj i Indstillinger.</small>';
+ $('shOwn').value=(m.f==='o'&&m.why&&!shR.includes(m.why))?m.why:'';
+ $('shClr').style.display=m.f==='o'?'':'none';$('sheetBg').hidden=false}
+function closeSheet(){$('sheetBg').hidden=true}
+function pick(w){const m=S.marks[shKey]=S.marks[shKey]||{};m.f='o';m.why=w;save();closeSheet();keepRender()}
+$('shList').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b)pick(shR[b.dataset.i])});
+$('shUse').onclick=()=>{const v=$('shOwn').value.trim();if(v)pick(v)};
+$('shClr').onclick=()=>{const m=S.marks[shKey]||{};m.f='';delete m.why;save();closeSheet();keepRender()};
+$('shX').onclick=closeSheet;$('sheetBg').addEventListener('click',e=>{if(e.target.id==='sheetBg')closeSheet()});
+// årsager i indstillinger
+function renderReasons(){$('rsList').innerHTML=(S.set.reasons||[]).map((t,i)=>`<div class="rw"><input type="text" style="max-width:none;flex:1" value="${esc(t)}" data-r="${i}" placeholder="Årsag…"><button class="b dng" data-rd="${i}" aria-label="Slet">✕</button></div>`).join('')||'<div class="rw"><small>Ingen årsager – tilføj en nedenfor.</small></div>'}
+$('rsList').addEventListener('change',e=>{const t=e.target;if(t.dataset.r===undefined)return;S.set.reasons[t.dataset.r]=t.value.trim();S.set.reasons=S.set.reasons.filter(Boolean);save();renderReasons()});
+$('rsList').addEventListener('click',e=>{const d=e.target.closest('[data-rd]');if(d){S.set.reasons.splice(d.dataset.rd,1);save();renderReasons()}});
+$('rsAdd').onclick=()=>{S.set.reasons.push('');renderReasons();const i=document.querySelectorAll('#rsList input');i[i.length-1].focus()};
+$('rsDef').onclick=()=>{if(confirm('Gendan standardårsagerne? Dine egne slettes.')){S.set.reasons=DEFR.slice();save();renderReasons()}};
+// installér som app
+let dip=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e});
+$('bInst').onclick=async()=>{if(matchMedia('(display-mode: standalone)').matches){toast('Appen er allerede installeret');return}
+ if(dip){dip.prompt();await dip.userChoice;dip=null}else toast('Åbn Chrome-menuen ⋮ og vælg “Installér app” eller “Føj til startskærm”')};
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('instSm').textContent='Klar – virker uden internet'}).catch(()=>{})}
+renderReasons();
+applySet();render(true);route();
+</script>
+</body>
+</html>
