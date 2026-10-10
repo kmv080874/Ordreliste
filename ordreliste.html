@@ -83,7 +83,7 @@ body.noanim *{animation:none!important;transition:none!important}
 @media print{
  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
  body{background:#fff;font-size:9pt}
- .top,.pills,.seg,.acts,#prog,.hint,#pgSet,#toast,#sheetBg,.c-f,.ed,.addrow{display:none!important}
+ .top,.pills,.seg,.acts,#prog,.hint,#pgSet,#pgSearch,#toast,#sheetBg,.c-f,.ed,.addrow{display:none!important}
  .printhead{display:block;font-size:13pt;font-weight:700;margin:0 0 6px}
  .sec{margin:0 0 10px;break-inside:avoid}.scroll{overflow:visible;border:0;box-shadow:none;border-radius:0}
  table{min-width:0}th,td{padding:2px 4px;white-space:normal;position:static!important;box-shadow:none!important}
@@ -122,6 +122,12 @@ body.dark .dng{color:#ff8a8a!important;border-color:#6a3a3a!important}
 .why{font-size:.8rem;font-weight:700;color:#7a4b00;margin-bottom:3px;white-space:normal}
 body.dark #sheet{background:#18212a;color:#e6ecf0}body.dark #shList button{background:#3a2c10;color:#ffe2b0;border-color:#8a5d12}body.dark #shList button.on{background:var(--o)}body.dark .why{color:#ffd08a}body.dark .shRow input{background:#0f161c;color:#e6ecf0;border-color:#46535d}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}@keyframes fd{from{opacity:0}}
+.rc{background:#fff;border-radius:12px;margin:8px 12px;padding:10px 12px;border-left:8px solid var(--line);box-shadow:0 1px 5px rgba(0,0,0,.1);animation:rin .35s both}
+.rc.g{border-left-color:#2e9a3f;background:var(--g)}.rc.o{border-left-color:#d98b00;background:var(--o)}.rc.r{border-left-color:#d03030;background:var(--r)}
+.rc .rt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.rc .rt span{font-size:.85rem;opacity:.8}.rc .bd{font-size:.85rem;margin-top:3px}
+.sum{margin:8px 12px;padding:12px 14px;border-radius:12px;background:var(--steel);color:#fff;line-height:1.5}
+td input.prd{min-width:150px}
+body.dark .rc{background:#18212a}body.dark .rc.g{background:var(--g)}body.dark .rc.o{background:var(--o)}body.dark .rc.r{background:var(--r)}
 </style>
 <style id="pg"></style>
 </head>
@@ -133,6 +139,7 @@ body.dark #sheet{background:#18212a;color:#e6ecf0}body.dark #shList button{backg
  <div class="seg"><button id="vAll" class="on">Alle ordrer</button><button id="vDay">📅 I dag</button></div>
  <div class="acts">
   <label class="b pri" for="foto">📷 Ny liste (foto)</label>
+  <button class="b" id="bSoeg">🔎 Søg tidligere</button>
   <button class="b" id="bEdit">✏️ Redigér</button>
   <button class="b pri" id="bPdf">📄 Gem PDF</button>
   <button class="b" id="bShare">📤 Del PDF</button>
@@ -146,6 +153,15 @@ body.dark #sheet{background:#18212a;color:#e6ecf0}body.dark #shList button{backg
  <div class="printhead" id="ph"></div>
  <div id="app"></div>
  <p class="hint">✓ grøn = færdig · ! orange = står stille (du vælger årsag) · ✕ rød = forsinket (rækker bliver også røde automatisk, når slut er overskredet). Flueben = igangsat. Alt gemmes på telefonen – brug “Backup” for at kunne åbne listen igen i appen. PDF er til at se, sende og printe.</p>
+</main>
+
+<main id="pgSearch" hidden>
+ <div class="card"><h3>Søg i tidligere lister</h3>
+  <div class="rw"><input type="text" id="sK" placeholder="Kundenavn (eller en del af det)" style="max-width:none;flex:1"></div>
+  <div class="rw"><input type="text" id="sP" placeholder="Produkt, ordrenr. eller kommentar" style="max-width:none;flex:1"></div>
+  <small id="sInfo"></small></div>
+ <div id="sRes"></div>
+ <div class="acts"><button class="b pri" id="sBack">← Tilbage til listen</button></div>
 </main>
 
 <main id="pgSet" hidden>
@@ -190,7 +206,7 @@ const LOGO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDA
 const baseList=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return{dato:p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear(),sec:[]}};
 const DEFR=['Mangler materiale','Maskine står stille','Venter på kunde / afklaring','Mangler værktøj / program','Venter på kvalitetsgodkendelse','Mangler personale'];
 const DEF={reasons:DEFR.slice(),theme:'auto',mail:'',pre:'Ordreliste',onlyMarked:1,auto:1,size:'m',anim:1,k:1,op:1,st:1,t:1,paper:'A4',orient:'landscape'};
-let S={list:baseList(),marks:{},set:{...DEF},skjul:false,edit:false,view:'all'};
+let S={list:baseList(),marks:{},set:{...DEF},skjul:false,edit:false,view:'all',prod:{}};
 try{
  const g=localStorage.getItem('ordreliste-v2');
  if(g){const o=JSON.parse(g);S=Object.assign(S,o,{set:{...DEF,...(o.set||{})},edit:false})}
@@ -198,7 +214,7 @@ try{
   for(const k in (o.rows||{}))S.marks[k.replace(/(\d+-\d+) (\d+:\d+)$/,'$1-2026 $2')]=o.rows[k];
   S.skjul=!!o.skjul;if(o.notes)for(const i in o.notes)if(S.list.sec[i])S.list.sec[i].n=o.notes[i]}}
 }catch(e){}
-const save=()=>{try{localStorage.setItem('ordreliste-v2',JSON.stringify({list:S.list,marks:S.marks,set:S.set,skjul:S.skjul,view:S.view}))}catch(e){}};
+const save=()=>{try{localStorage.setItem('ordreliste-v2',JSON.stringify({list:S.list,marks:S.marks,set:S.set,skjul:S.skjul,view:S.view,prod:S.prod}))}catch(e){}};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const dt=s=>{const m=String(s).match(/(\d+)-(\d+)-(\d+)\s+(\d+):(\d+)/);return m?new Date(+m[3],m[2]-1,+m[1],+m[4],+m[5]):null};
@@ -227,9 +243,9 @@ function renderToday(){
  A.className='fresh '+['k','op','st','t'].filter(k=>!S.set[k]).map(k=>'hide-'+k).join(' ');
  let i=0;
  const row=r=>{const k=key(r),m=S.marks[k]||{},c=cls(r);
-  return`<tr class="row ${c} ${m.i?'ig':''}" style="--i:${i++}" data-k="${esc(k)}"><td class="s1"><input class="ig" type="checkbox" data-a="i" ${m.i?'checked':''}></td><td class="s2">${esc(r.o)}</td><td class="c-k">${esc(r.k)}</td><td class="n">${esc(r.a)}</td><td class="c-op">${esc(r.op)}</td><td>${esc(r.e)}</td><td class="rel">${rel(r,c)}</td><td class="c-st">${esc(r.st)}</td><td class="n c-t">${esc(r.r)}</td>
-  <td class="c-f"><div class="cl"><button class="bg ${m.f==='g'?'on':''}" data-f="g">✓</button><button class="bo ${m.f==='o'?'on':''}" data-f="o">!</button><button class="br ${m.f==='r'?'on':''}" data-f="r">✕</button></div></td><td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td></tr>`};
- const tb=(rows,t)=>rows.length?`<div class="sec"><h2>${t} <span class="cnt">${rows.length}</span></h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Slut</th><th>Tid til slut</th><th class="c-st">Status</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div></div>`:'';
+  return`<tr class="row ${c} ${m.i?'ig':''}" style="--i:${i++}" data-k="${esc(k)}"><td class="s1"><input class="ig" type="checkbox" data-a="i" ${m.i?'checked':''}></td><td class="s2">${esc(r.o)}</td><td class="c-k">${esc(r.k)}</td><td class="n">${esc(r.a)}</td><td class="c-op">${esc(r.op)}</td><td>${esc(r.s)}</td><td>${esc(r.e)}</td><td class="rel">${rel(r,c)}</td><td class="c-st">${esc(r.st)}</td><td class="n c-t">${esc(r.r)}</td>
+  <td class="c-f"><div class="cl"><button class="bg ${m.f==='g'?'on':''}" data-f="g">✓</button><button class="bo ${m.f==='o'?'on':''}" data-f="o">!</button><button class="br ${m.f==='r'?'on':''}" data-f="r">✕</button></div></td><td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td><td><input type="text" class="prd" placeholder="Produkt…" value="${esc(S.prod[r.o]||'')}" data-a="p" data-o="${esc(r.o)}"></td></tr>`};
+ const tb=(rows,t)=>rows.length?`<div class="sec"><h2>${t} <span class="cnt">${rows.length}</span></h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Start</th><th>Slut</th><th>Tid til slut</th><th class="c-st">Status</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th><th>Produkt</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div></div>`:'';
  A.innerHTML=(day.length||late.length)?tb(late,'Forsinket fra tidligere dage')+tb(day,'I dag – efter sluttid'):'<div class="empty">Ingen ordrer i dag 🎉<br>Skift til “Alle ordrer” for hele listen.</div>';
  recount();
 }
@@ -244,13 +260,13 @@ function render(fresh){
  let n=0,h='';
  const ce=(si,ri,f,c,v)=>`<td class="${c}" ${S.edit?`contenteditable data-e="${si}.${ri}.${f}"`:''}>${esc(v)}</td>`;
  L.sec.forEach((s,si)=>{
-  h+=`<div class="sec"><h2 ${S.edit?`contenteditable data-e="${si}.t"`:''}>${esc(s.t)}</h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Start</th><th>Slut</th><th class="c-st">Status</th><th class="c-t">Plan (t)</th><th class="c-t">Udf. (t)</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th>${S.edit?'<th class="ed"></th>':''}</tr></thead><tbody>`;
+  h+=`<div class="sec"><h2 ${S.edit?`contenteditable data-e="${si}.t"`:''}>${esc(s.t)}</h2><div class="scroll"><table><thead><tr><th class="s1">Igang</th><th class="s2">Ordre</th><th class="c-k">Kunde</th><th>Antal</th><th class="c-op">Operation</th><th>Start</th><th>Slut</th><th class="c-st">Status</th><th class="c-t">Plan (t)</th><th class="c-t">Udf. (t)</th><th class="c-t">Rest (t)</th><th class="c-f">Farve</th><th>Kommentar</th><th>Produkt</th>${S.edit?'<th class="ed"></th>':''}</tr></thead><tbody>`;
   s.r.forEach((r,ri)=>{
    const k=key(r),m=S.marks[k]||{},c=cls(r);if(S.skjul&&c==='g')return;
    h+=`<tr class="row ${c} ${m.i?'ig':''}" style="--i:${n++}" data-k="${esc(k)}"><td class="s1"><input class="ig" type="checkbox" data-a="i" ${m.i?'checked':''}></td>
    ${ce(si,ri,'o','s2',r.o)}${ce(si,ri,'k','c-k',r.k)}${ce(si,ri,'a','n',r.a)}${ce(si,ri,'op','c-op',r.op)}${ce(si,ri,'s','',r.s)}${ce(si,ri,'e','',r.e)}${ce(si,ri,'st','c-st',r.st)}${ce(si,ri,'p','n c-t',r.p)}${ce(si,ri,'u','n c-t',r.u)}${ce(si,ri,'r','n c-t',r.r)}
    <td class="c-f"><div class="cl"><button class="bg ${m.f==='g'?'on':''}" data-f="g">✓</button><button class="bo ${m.f==='o'?'on':''}" data-f="o">!</button><button class="br ${m.f==='r'?'on':''}" data-f="r">✕</button></div></td>
-   <td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td>${S.edit?`<td class="ed"><button class="b dng" data-del="${si}.${ri}">✕</button></td>`:''}</tr>`;
+   <td>${why(m)}<input type="text" placeholder="Kommentar…" value="${esc(m.c)}" data-a="c"></td><td><input type="text" class="prd" placeholder="Produkt…" value="${esc(S.prod[r.o]||'')}" data-a="p" data-o="${esc(r.o)}"></td>${S.edit?`<td class="ed"><button class="b dng" data-del="${si}.${ri}">✕</button></td>`:''}</tr>`;
   });
   h+=`</tbody></table></div>${S.edit?`<div class="acts addrow"><button class="b" data-add="${si}">＋ Række</button></div>`:''}<div class="note"><input type="text" placeholder="Note" value="${esc(s.n)}" data-n="${si}"></div></div>`;
  });
@@ -273,6 +289,7 @@ $('app').addEventListener('change',e=>{
  const tr=t.closest('tr');if(!tr)return;const k=tr.dataset.k,m=S.marks[k]=S.marks[k]||{};
  if(t.dataset.a==='i'){m.i=t.checked;tr.classList.toggle('ig',t.checked);recount()}
  if(t.dataset.a==='c')m.c=t.value;
+ if(t.dataset.a==='p'){const v=t.value.trim();if(v)S.prod[t.dataset.o]=v;else delete S.prod[t.dataset.o];document.querySelectorAll('input[data-a=p]').forEach(x=>{if(x.dataset.o===t.dataset.o)x.value=v})}
  save();
 });
 $('app').addEventListener('focusout',e=>{
@@ -284,7 +301,7 @@ $('app').addEventListener('focusout',e=>{
 $('bHide').onclick=()=>{S.skjul=!S.skjul;save();render(false)};
 $('bEdit').onclick=()=>{S.edit=!S.edit;render(false);if(!S.edit)toast('Ændringer gemt')};
 $('bPrint').onclick=()=>{if(S.edit){S.edit=false;render(false)}const t=document.title;document.title=title();setTimeout(()=>{print();document.title=t},60)};
-function exp(){return{app:'ordreliste',v:2,gemt:new Date().toISOString(),list:S.list,marks:S.marks}}
+function exp(){return{app:'ordreliste',v:2,gemt:new Date().toISOString(),list:S.list,marks:S.marks,prod:S.prod,arkiv:ARK}}
 const fname=()=>'ordreliste-uge'+wk(S.list.dato)+'-'+S.list.dato.slice(-4)+'.json';
 function download(f){const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 const mkFile=()=>new File([JSON.stringify(exp())],fname(),{type:'application/json'});
@@ -335,7 +352,7 @@ $('fil').addEventListener('change',e=>{
  const f=e.target.files[0];e.target.value='';if(!f)return;
  const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o.list||!Array.isArray(o.list.sec))throw 0;
   if(!confirm('Indlæs “'+f.name+'” og erstat den nuværende liste?'))return;
-  S.list=o.list;S.marks=o.marks||{};save();render(true);toast('Liste indlæst')}catch(x){toast('Filen kunne ikke læses som ordreliste')}};rd.readAsText(f)});
+  archive();S.list=o.list;S.marks=o.marks||{};if(o.prod)Object.assign(S.prod,o.prod);mergeArk(o.arkiv);save();render(true);toast('Liste indlæst')}catch(x){toast('Filen kunne ikke læses som ordreliste')}};rd.readAsText(f)});
 $('bMail').onclick=()=>{
  const L=[],only=S.set.onlyMarked;
  S.list.sec.forEach(s=>{const rows=[];s.r.forEach(r=>{const m=S.marks[key(r)]||{},c=cls(r);
@@ -378,7 +395,7 @@ $('foto').addEventListener('change',e=>{
    $('prog').classList.remove('show');
    if(!n){toast('Fandt ingen ordrelinjer – tag billedet lige ovenfra i godt lys');return}
    if(!confirm(n+' linjer i '+p.sec.length+' sektioner fundet. Erstat den nuværende liste?\n(Tjek bagefter i “Redigér”.)'))return;
-   const d=new Date();S.list={dato:p.dato||String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear(),sec:p.sec};
+   archive();const d=new Date();S.list={dato:p.dato||String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear(),sec:p.sec};
    save();render(true);toast('Ny liste indlæst – tjek og ret i “Redigér”');
   }catch(err){$('prog').classList.remove('show');toast('Fejl ved læsning af billedet')}
  };im.src=URL.createObjectURL(f);
@@ -393,8 +410,8 @@ function applySet(){
 }
 $('pgSet').addEventListener('change',e=>{const t=e.target,k=t.dataset.s;if(!k)return;S.set[k]=t.type==='checkbox'?(t.checked?1:0):t.value;save();applySet();render(false)});
 $('bClr').onclick=()=>{if(confirm('Fjerne alle markeringer og kommentarer?')){S.marks={};save();render(false);toast('Markeringer ryddet')}};
-$('bDef').onclick=()=>{if(confirm('Tøm hele listen? Tag evt. en backup først.')){S.list=baseList();save();render(true);toast('Listen er tom')}};
-function route(){const s=location.hash==='#indstillinger';$('pgSet').hidden=!s;$('pgMain').hidden=s;const p=s?$('pgSet'):$('pgMain');p.classList.remove('page');void p.offsetWidth;p.classList.add('page');scrollTo(0,0)}
+$('bDef').onclick=()=>{if(confirm('Tøm hele listen? Tag evt. en backup først.')){archive();S.list=baseList();save();render(true);toast('Listen er tom')}};
+function route(){const pg={'#indstillinger':'pgSet','#soeg':'pgSearch'}[location.hash]||'pgMain';['pgMain','pgSet','pgSearch'].forEach(i=>$(i).hidden=i!==pg);const p=$(pg);p.classList.remove('page');void p.offsetWidth;p.classList.add('page');scrollTo(0,0);if(pg==='pgSearch')runSearch()}
 $('gear').onclick=()=>{location.hash=location.hash==='#indstillinger'?'':'#indstillinger'};
 $('bBack').onclick=()=>{location.hash=''};
 addEventListener('hashchange',route);
@@ -439,6 +456,34 @@ let dip=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e
 $('bInst').onclick=async()=>{if(matchMedia('(display-mode: standalone)').matches){toast('Appen er allerede installeret');return}
  if(dip){dip.prompt();await dip.userChoice;dip=null}else toast('Åbn Chrome-menuen ⋮ og vælg “Installér app” eller “Føj til startskærm”')};
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('instSm').textContent='Klar – virker uden internet'}).catch(()=>{})}
+
+// arkiv og søgning
+const AK='ordreliste-arkiv-v1';let ARK=[];
+try{ARK=JSON.parse(localStorage.getItem(AK))||[]}catch(e){}
+const saveArk=()=>{try{localStorage.setItem(AK,JSON.stringify(ARK))}catch(e){toast('Arkivet er fuldt – tag en backup')}};
+function flat(list,marks,prod){const o=[];list.sec.forEach(s=>s.r.forEach(r=>{const m=marks[key(r)]||{};o.push({l:list.dato,o:r.o,k:r.k,a:r.a,op:r.op,s:r.s,e:r.e,st:r.st,sec:s.t,f:m.f||'',i:m.i?1:0,c:m.c||'',y:m.why||'',p:prod[r.o]||''})}));return o}
+function archive(){if(!S.list.sec.some(s=>s.r.length))return;ARK=ARK.filter(x=>x.l!==S.list.dato);ARK.push({l:S.list.dato,rows:flat(S.list,S.marks,S.prod)});if(ARK.length>150)ARK.shift();saveArk()}
+function mergeArk(a){(a||[]).forEach(x=>{if(x&&x.l&&Array.isArray(x.rows)&&!ARK.some(y=>y.l===x.l))ARK.push(x)});saveArk()}
+const nrm=x=>String(x==null?'':x).toLowerCase();
+const STX={g:'Færdig',o:'Stod stille',r:'Forsinket','':'Ingen markering'};
+function runSearch(){
+ const R=$('sRes'),rows=flat(S.list,S.marks,S.prod);
+ ARK.forEach(a=>{if(a.l!==S.list.dato)a.rows.forEach(r=>rows.push(r))});
+ const weeks=new Set(rows.map(r=>r.l)).size;
+ $('sInfo').textContent=weeks+' lister gennemsøges (den nuværende + '+ARK.filter(a=>a.l!==S.list.dato).length+' i arkivet). Gamle lister gemmes automatisk, når du indlæser en ny.';
+ const kq=nrm($('sK').value).split(/\s+/).filter(Boolean),pq=nrm($('sP').value).split(/\s+/).filter(Boolean);
+ if(!kq.length&&!pq.length){R.innerHTML='<div class="empty">Skriv et kundenavn og/eller et produkt (eller ordrenummer).</div>';return}
+ const hit=rows.filter(r=>{const k=nrm(r.k),t=nrm([r.p,r.c,r.y,r.o,r.op,r.sec].join(' '));return kq.every(w=>k.includes(w))&&pq.every(w=>t.includes(w))});
+ hit.sort((a,b)=>((dt(b.e)||0)-(dt(a.e)||0)));
+ if(!hit.length){R.innerHTML='<div class="empty">Ingen fund. Prøv færre ord eller et kortere navn.</div>';return}
+ const last=hit[0],done=hit.find(r=>r.f==='g');
+ let h=`<div class="sum"><b>${hit.length} fund</b><br>Sidst på en liste: ${esc(last.e)} (uge ${wk(last.l)}) – ordre ${esc(last.o)}<br>Sidst meldt færdig: ${done?esc(done.e)+' (uge '+wk(done.l)+')':'ingen markeret færdig endnu'}</div>`;
+ hit.slice(0,200).forEach(r=>{h+=`<div class="rc ${r.f}"><div class="rt"><b>${esc(r.o)} · ${esc(r.k||'(ingen kunde)')}</b><span>uge ${wk(r.l)} · slut ${esc(r.e)}</span></div>
+ <div class="bd">${esc(r.a)} stk · ${esc(r.op)} · ${esc(r.sec)} · ${STX[r.f]}${r.i?' · igangsat':''}</div>
+ ${r.p?`<div class="bd">Produkt: ${esc(r.p)}</div>`:''}${r.y?`<div class="why">⚠ ${esc(r.y)}</div>`:''}${r.c?`<div class="bd">💬 ${esc(r.c)}</div>`:''}</div>`});
+ R.innerHTML=h}
+$('sK').addEventListener('input',runSearch);$('sP').addEventListener('input',runSearch);
+$('bSoeg').onclick=()=>{location.hash='#soeg'};$('sBack').onclick=()=>{location.hash=''};
 renderReasons();
 applySet();render(true);route();
 </script>
